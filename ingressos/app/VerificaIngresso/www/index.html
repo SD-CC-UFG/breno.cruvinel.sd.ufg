@@ -1,0 +1,91 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <title>Barcode Scanner DEMO</title>
+
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, user-scalable=no">
+  <script src="components/loader.js"></script>
+  <link rel="stylesheet" href="components/loader.css">
+  <link rel="stylesheet" href="css/style.css">
+
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+	<!-- css para biblioteca de icones -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">  
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>  
+
+<script type="text/javascript">
+function scanBarcode(){
+	cordova.plugins.barcodeScanner.scan(
+		function (result) {
+				postHASH(result.text);
+		}, 
+		function (error) {
+				alert("Falha no scanner: " + error);
+		}
+ );
+}//scanBarcode
+
+//verificar internet do aparelho
+function checkConnection() {
+	var networkState = navigator.connection.type;
+	var result = true;
+	if(networkState == "none" || networkState == "unknown" || networkState == undefined){ 
+	result = false; 
+		alert("Ops... Falha na conexão com a internet. Tente novamente mais tarde!");
+	}//if(networkState == "none" || networkState == "unknown"){ 
+	return result;
+}//function checkConnection() {	
+
+//enviar hash para o servidor
+function postHASH(v_hash){
+	if(checkConnection()){
+		var params = "ajax=ingresso&hash="+v_hash;
+		
+		send(params, "", 0);
+	}//if(checkConnection()){
+}//fim postHASH
+
+function send(params, url, tentativa){
+	var url_principal = "http://www.bcm-apresentacao.esy.es/ingressos/app_functions.php";
+	var url_backup = "http://192.168.43.167/sistemas-distribuidos/problemas/ingressos/backup/app_functions.php";
+	if(url == ""){ url = url_principal; }
+	
+	var xhttp = new XMLHttpRequest();	
+	xhttp.open("POST", url, true);
+	xhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+	xhttp.onreadystatechange = function() {
+		if(xhttp.readyState == XMLHttpRequest.DONE && xhttp.status == 200) { 
+			var data = JSON.parse(xhttp.responseText); 
+			alert(data.msg);
+		}
+		if(xhttp.readyState == XMLHttpRequest.DONE && xhttp.status == 404){//if(xhttp.readyState == XMLHttpRequest.DONE && xhttp.status == 200) { 
+			if(tentativa == 0){
+				xhttp.abort();
+				tentativa++;
+				send(params, url_backup, tentativa);
+			}else{//if(tentativa == 0){
+				alert("Ops.. Nenhum servidor disponível");
+			}//}else{//if(tentativa == 0){
+		}		
+	}//xhttp.onreadystatechange = function() {
+	xhttp.send(params); 	
+
+}
+
+
+</script>
+</head>
+
+<body>
+  <div class="panel">
+		<div class="panel-heading">Ingressos - Leitor QRCode</div>
+    <div class="panel-body" style="text-align:center;">
+    	<div class="col-lg-10">
+	    	<input type="button" class="btn btn-primary" onClick="scanBarcode();" value ="Ler Ingresso" />
+      </div>
+    </div>
+  </div>
+</body>
+</html>
